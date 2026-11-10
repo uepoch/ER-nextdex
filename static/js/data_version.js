@@ -1,6 +1,7 @@
 import { hydrate } from './hydrate/hydrate.js'
 import { saveToLocalstorage, fetchFromLocalstorage } from './settings.js';
 import {get_url_parameters, update_url_parameters} from "./url.js"
+import deploymentVersion from './deployment_version.js'
 /**
  * To select which version of the game data to have
  */
@@ -24,6 +25,8 @@ const allVersions = [
     "2.65.4",
     "2.65.5"
 ]
+
+if (deploymentVersion) allVersions.push(deploymentVersion.version)
 
 const defaultVersion = allVersions[allVersions.length - 1]
 
@@ -59,8 +62,11 @@ export function changeVersion(version=defaultVersion, firstLoad=false){
         version: version
     })
     set_warning_version(version === defaultVersion)
+    const cacheVersion = version === deploymentVersion?.version
+        ? deploymentVersion.cacheVersion
+        : LATEST_DATA_VERSION
 
-    if (savedVersion && savedVersion == LATEST_DATA_VERSION &&
+    if (savedVersion && savedVersion == cacheVersion &&
         $('#enable-storage')[0].checked && !forceRefresh){
         try{
             const local_storage_data = fetchFromLocalstorage("data"+version)
@@ -87,7 +93,7 @@ export function changeVersion(version=defaultVersion, firstLoad=false){
             try{
                 //save first, because it causes issue after
                 saveToLocalstorage("data"+version, gameData)
-                saveToLocalstorage("dataversion"+version, LATEST_DATA_VERSION)
+                saveToLocalstorage("dataversion"+version, cacheVersion)
             }catch(_e){
                 // bruh
             }
